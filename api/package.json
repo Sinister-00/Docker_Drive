@@ -1,0 +1,27 @@
+{
+  "name": "docker_drive",
+  "version": "1.0.0",
+  "description": "Simple app used in testing while learning docker",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon -L app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sinister-00/Docker_Drive.git"
+  },
+  "keywords": [
+    "docker"
+  ],
+  "author": "Swapnil",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.2"
+  },
+  "bugs": {
+    "url": "https://github.com/Sinister-00/Docker_Drive/issues"
+  },
+  "homepage": "https://github.com/Sinister-00/Docker_Drive#readme"
+}
