@@ -1,0 +1,5 @@
+# works same as gitignore
+# this file is used to ignore files from being uploaded to docker container
+
+
+node_modules
