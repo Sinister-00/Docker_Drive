@@ -8,9 +8,12 @@ FROM node:17-alpine
 # this allows us to set the working directory for any subsequent RUN, CMD, ENTRYPOINT, COPY and ADD instructions
 WORKDIR /app
 
-COPY . .
+COPY package.json .
 
 RUN npm install
+
+COPY . .
+
 
 # RUN node app.js  this will run the app.js file when the container is created (not recommended)
 
