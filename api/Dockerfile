@@ -1,5 +1,8 @@
 FROM node:17-alpine
 
+# RUN npm install -g nodemon this will install nodemon globally in the container
+RUN npm install -g nodemon
+
 # COPY . . # will copy all files from the root directory to the container root directory
 # COPY . /app # will copy all files from the root directory to the container /app directory (if doesn't exist, it will be created)
 
@@ -7,6 +10,7 @@ FROM node:17-alpine
 
 # this allows us to set the working directory for any subsequent RUN, CMD, ENTRYPOINT, COPY and ADD instructions
 WORKDIR /app
+
 
 COPY package.json .
 
@@ -22,7 +26,8 @@ COPY . .
 # we also use EXPORT to export the port which is required to run the app
 EXPOSE 4000
 
-CMD ["node", "app.js"]
+# CMD ["node", "app.js"]
+CMD [ "npm","run","dev"]
 
 # to build the image
 # docker build -t <image-name> .
