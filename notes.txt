@@ -1,0 +1,237 @@
+// we can create the image by using this command:
+
+docker build -t myapp . 
+
+// this will create a myapp image which we can see in the docker gui
+// we can directly run and create the container of that image
+// but we need to map the port of the machine to the port of the container (port of machine <=> port of container)
+// machine can have different port then the container. say in container we specified 4000 and we can map to 5000 of the machine and will still work fine
+// (port mapping only works when you have specified/exposed port in dockerfile)
+
+
+
+// we can list all the images we have using:
+
+docker images
+
+// to run an image we run this command
+
+docker run --name myapp_c1 myapp 
+
+// --name is the name of the container we want to give
+// (myapp_c1) is the name of the container here
+
+
+// to stop a container we can use this
+// docker stop (NAME/ID)
+
+docker stop myapp_c1
+
+// here myapp_c1 is the name of the container and we run the above command to stop the container
+
+// Now, to do port mapping in the container using cli we can run this
+
+docker run --name myapp_c2 -p 4000:4000 -d myapp
+
+// -p stand for publish (to publish or map the port)
+// (4000:4000) right one is for container and left one is for machine
+// -d is used to run the container in detached mode in terminal (!Blocking)
+
+
+docker ps
+
+// this will list out all the running containers in docker
+
+docker ps -a
+
+// this will list all the available containers in docker (even the exited ones)
+
+docker start myapp_c2
+
+// this will start the myapp_c2 container and we dont need to redo the port mapping and also use the `docker run` command to rebuild the container from the image.
+
+
+// Docker also does the caching of the layers
+// Say, we use node version 17 and build one image out of it with some source code.
+// it takes 30 seconds to build a image(Assuming).
+// Now you change the source code  a little bit and then build the image again.
+// This time docker will see that node version is similar which was build in previous images/image.
+// So it uses that cached layer to save time to build whole image from scratch
+// {it's not single layer is cached it's the full image that every step is cached}
+
+
+// To better undestand this
+
+FROM node:17-alpine
+
+WORKDIR /app
+
+COPY . .
+
+RUN npm install
+
+EXPOSE 4000
+
+CMD ["node", "app.js"]
+
+
+// this is the orignal dockerfile.
+// we can copy the package.json to avoid running npm install to save time.
+
+FROM node:17-alpine
+
+WORKDIR /app
+
+COPY package.json .
+
+RUN npm install
+
+COPY . .
+
+EXPOSE 4000
+# required for docker desktop port mapping
+
+CMD ["node", "app.js"]
+
+// we run this to build a cache
+// in this we get a cached layer till `RUN npm install` and whenvever there is change in app it will directly reflect to the container app
+// saving time to reinstall all the npm packages and only replacing the app code.
+
+
+
+// we can remove the unecessary images from docker by:
+docker image rm <image_name>
+
+// To list docker images we use `docker images`
+// NOTE: we can not delete the images which are used by any container (even if they are not running)
+
+docker image rm <image_name> -f
+
+// -f flag is for the force remove the image even if it is being used by any container.
+
+
+
+// another way is to delete the containers first
+// use `docker ps -a` to list all the docker containers
+
+docker container rm <container-name>
+
+// OR WE CAN DELETE MULTIPLE CONTAINERS
+
+docker container rm <container-name> <container-name> <container-name>
+
+// specify the container name to delete using the above command.
+
+
+
+docker system prune -a 
+
+// this will delete all containers, images, volumes.
+
+
+docker build -t myapp:v1 .
+
+// this is used to tag the build image to a specfic version/tag
+
+docker run --name myapp_c -p 3000:4000 -d myapp:v1
+
+// to create a container for v1 of myapp
+
+
+docker run --name myapp_c_nodemon -p 4000:4000 --rm myapp:nodemon
+
+// this will create the container `myapp_c_nodemon` and delete it when it is stopped.
+
+
+//-----------VOLUMES--------------//
+
+// These are used to basically map the folders on our machine to the container.
+// Say, we can map tha `api` folder of our machine to the `app` folder of the container.
+
+docker run --name myapp_c_nodemon -p 4000:4000 --rm -v <absolute-path-of-folder-in-local-machine>:/app -v /app/node_modules myapp:nodemon
+
+// -v is used to create a volume in container and also used to map a certain folder to the folder in container
+// also node_modules need to be isolated from the machine as whatever changes is done in the local machine it gets reflected to container
+
+
+//--------------COMPOSE------------------//
+
+// if we want that our containers communicate with each other in a way that everything is inter connected.
+// we need to set up a lot of volumes and things will get messy.
+// Say, we have a backend and a front end app and we want a container to have both integrated or 
+// folders must be mapped to a single container.
+// so easier way to manage this is using docker COMPOSE
+
+// first in root directory create a `docker-compose.yaml` file
+// the content of the file is as follows
+// using `//` to add commnets here but must not be done in actual file.
+
+
+// content of the file is below
+```
+
+version: "3.8" // version of docker compose
+services: // list of nested services which must run 
+  api: // name of the first service does not need to be same as folder
+    build: ./api // where the Dockerfile is located to build the image.
+    container_name: api_c //name of the container
+    ports: //port mapping
+      - "4000:4000"
+    volumes: // volume mapping
+      - ./api:/app
+      - ./app/node_modules
+
+```
+
+
+docker-compose up
+
+// run this in the root directory where `docker-compose.yaml` is located
+// run => start all the services => create image => create container of that image => does all the mapping.
+
+
+docker-compose down --rmi all -v
+
+// this will delete all the docker compose images, contianers, volumes.
+
+
+
+
+// To enable multiple services we can add it inside the nested services section.
+// say we have a react app which fetch from a endpoint and for testing we want to fetch the data from a mongodb app
+// so we will create a frontend and a backend container and run them seperately.
+
+// here is the content of `docker-compose.yaml` file which has both the frontend and the backend.
+
+```
+version: "3.9"
+services:
+  backend:
+    build: ./api
+    container_name: api_container
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+  frontend:
+    build: ./myblog
+    container_name: myblog_container
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./myblog:/app
+      - /app/node_modules
+    stdin_open: true #Standard input open means that you can type into the container
+    tty: true #Teletypewriter is a terminal emulation program that allows you to interact with the container
+```
+
+// use the command `docker-compose up` to run the compose and once it is up and running we can access the frontend and backend 
+// in different containers with ports 4000 for backend and 3000 for the frontend.
+
+
+// To push a image to public docker hub repository for others to use and have all the dependencies use this command to push the image
+
+docker push sswapnil20/myapi
+
+// here `sswapnil20/myapi` is the image pushed to the docker hub repository 
